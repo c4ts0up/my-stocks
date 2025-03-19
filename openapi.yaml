@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info:
+  title: MyStocks
+  description: API for MyStocks, web app that allows you to check the current stock market and recommends you the best buys
+  version: 0.0.1
+servers:
+  - url: 'https'
+paths:
+  
