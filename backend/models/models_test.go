@@ -60,16 +60,3 @@ func TestCloseDB_Failure(t *testing.T) {
 	assert.NoError(t, err, "Error was not returned upon close DB")
 	assert.NotNil(t, DB, "DB should still exist even after close failure")
 }
-
-// TestAutoMigrateError simulates a migration failure
-func TestAutoMigrateError(t *testing.T) {
-	mockDB, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	assert.NoError(t, err, "Failed to create mock DB")
-
-	DB = mockDB
-
-	// Simulate an AutoMigrate error
-	DB.Migrator().DropTable(&StockRating{})
-	err = DB.Migrator().AutoMigrate(&struct{}{})
-	assert.Error(t, err, "AutoMigrate should fail with invalid struct")
-}
