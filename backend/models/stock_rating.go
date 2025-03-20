@@ -16,3 +16,22 @@ type StockRating struct {
 	RatingTo   string    `json:"rating_to"`
 	Time       time.Time `json:"time"`
 }
+
+// StockRatingRaw matches the raw stock structure in a response
+type StockRatingRaw struct {
+	Ticker     string `json:"ticker"`
+	TargetFrom string `json:"target_from"`
+	TargetTo   string `json:"target_to"`
+	Company    string `json:"company"`
+	Action     string `json:"action"`
+	Brokerage  string `json:"brokerage"`
+	RatingFrom string `json:"rating_from"`
+	RatingTo   string `json:"rating_to"`
+	Time       string `json:"time"`
+}
+
+// StockQueryResponse matches the JSON response when querying stocks
+type StockQueryResponse struct {
+	Stocks   []StockRatingRaw `json:"items"`
+	NextPage string           `json:"next_page"`
+}
