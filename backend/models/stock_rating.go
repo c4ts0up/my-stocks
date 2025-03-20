@@ -7,8 +7,8 @@ import "gorm.io/gorm"
 type StockRating struct {
 	gorm.Model           // Includes the ID uint as entry key
 	Ticker     string    `json:"ticker"`
-	TargetFrom string    `json:"target_from"`
-	TargetTo   string    `json:"target_to"`
+	TargetFrom float64   `json:"target_from"` // TODO: can use uint64 to avoid floating error accumulation
+	TargetTo   float64   `json:"target_to"`
 	Company    string    `json:"company"`
 	Action     string    `json:"action"`
 	Brokerage  string    `json:"brokerage"`
