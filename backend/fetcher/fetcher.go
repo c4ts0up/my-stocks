@@ -3,7 +3,9 @@ package fetcher
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/c4ts0up/my-stocks/backend/models"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 )
@@ -14,14 +16,16 @@ type IFetcherApi interface {
 }
 
 // BasicStockFetcher implements a basic fetch
-type BasicStockFetcher struct{}
+type BasicStockFetcher struct {
+	DB *gorm.DB
+}
 
 // FetchStockData pulls data from an API and converts it
 func (s *BasicStockFetcher) FetchStockData(url string) ([]models.StockRating, string, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, "", errors.New("failed to fetch data")
+		return nil, "", fmt.Errorf("failed to fetch data from %v", url)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -44,7 +48,7 @@ func (s *BasicStockFetcher) FetchStockData(url string) ([]models.StockRating, st
 	for _, rawStock := range apiResponses.Stocks {
 		stock, err := convertApiResponse(rawStock)
 		if err != nil {
-			return nil, "", err
+			return nil, "", fmt.Errorf("failed to parse stock data, got %v", err)
 		}
 		stockRatings = append(stockRatings, stock)
 	}
@@ -57,8 +61,14 @@ func (s *BasicStockFetcher) FetchStockData(url string) ([]models.StockRating, st
 	return stockRatings, apiResponses.NextPage, nil
 }
 
-// SaveStockData saves stock data to the database (stub implementation)
+// SaveStockData saves stock data to the database (stub implementation). Supposes there are no conflicts in the API
 func (s *BasicStockFetcher) SaveStockData(stockList []models.StockRating) error {
-	// TODO: Implement this with GORM later
+
+	for _, stock := range stockList {
+		if err := s.DB.Create(&stock).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
