@@ -1,37 +1,57 @@
 package models
 
 import (
+	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
 )
 
+// DB holds the global database connection
 var DB *gorm.DB
 
-func ConnectDB() {
-	dsn := "host=localhost user=root password=mysecret dbname=stocks port=26257 sslmode=disable"
+// ConnectDB establishes a database connection (default or mockable)
+func ConnectDB(dsn string, dbInstance ...*gorm.DB) error {
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+
+	// Use a provided DB instance (e.g., a mock) if available
+	if len(dbInstance) > 0 {
+		DB = dbInstance[0]
+		log.Println("Using given database instance")
+	} else {
+		log.Println("Creating new database instance")
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			DB = nil
+			return fmt.Errorf("failed to connect to database: %v", err)
+		}
 	}
+
 	log.Println("✅ Connected to the database!")
 
 	// Auto-migrate schemas
 	err = DB.AutoMigrate(&StockRating{})
 	if err != nil {
-		return
+		return fmt.Errorf("failed to auto-migrate: %v", err)
 	}
+
+	return nil
 }
 
-func CloseDB() {
+// CloseDB closes the database connection (default or mockable)
+func CloseDB() error {
+	if DB == nil {
+		return fmt.Errorf("there is no open database connection")
+	}
+	// DB.DB() could panic, but let's hope it doesn't happen as only this class handles it
 	dbSQL, err := DB.DB()
 	if err != nil {
-		log.Fatalf("Failed to retrieve DB object: %v", err)
+		return fmt.Errorf("failed to retrieve DB object: %v", err)
 	}
 	err = dbSQL.Close()
 	if err != nil {
-		log.Fatalf("Failed to close database connection: %v", err)
-		return
+		return fmt.Errorf("failed to close database connection: %v", err)
 	}
+
+	return nil
 }
