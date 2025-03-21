@@ -87,6 +87,7 @@ func TestFetchStockInfo_OK(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "AAPL", stock.Ticker)
 	assert.Equal(t, "Apple Inc.", stock.Company)
+	assert.Equal(t, 214.65, stock.LastPrice)
 }
 
 // --- TEST CASE 6: SaveStockInfo works ---

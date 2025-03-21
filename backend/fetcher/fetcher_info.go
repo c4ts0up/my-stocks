@@ -55,8 +55,9 @@ func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, baseUrl string) (m
 
 	// Extract stock details
 	stock := models.Stock{
-		Ticker:  data[0].Ticker,
-		Company: data[0].CompanyName,
+		Ticker:    data[0].Ticker,
+		Company:   data[0].CompanyName,
+		LastPrice: data[0].LastPrice,
 	}
 
 	return stock, nil
