@@ -53,7 +53,7 @@ func main() {
 		}
 	}()
 
-	apiFetcher := fetcher.BasicStockFetcher{DB: models.DB, BearerToken: os.Getenv("API_BEARER_TOKEN")}
+	apiFetcher := fetcher.BasicStockRatingsFetcher{DB: models.DB, BearerToken: os.Getenv("API_BEARER_TOKEN")}
 	go startPeriodicFetchAll(fetchDelaySeconds, apiUrl, &apiFetcher)
 
 	// Set up the Gin router
