@@ -1,68 +1,111 @@
 openapi: 3.1.0
 info:
   title: MyStocks
-  description: API for MyStocks, web app that allows you to check the current stock market and recommends you the best buys
+  description: API for MyStocks, a web app that allows you to check the current stock market and get recommendations.
   version: 0.0.1
+
 servers:
-  - url: 'https'
+  - url: 'https://api.mystocks.com'
+
 paths:
   /stocks:
     get:
-      summary: Get stock ratings
-      description: Returns a list of stock ratings.
+      summary: Get all stocks
+      description: Returns a list of basic information about all stocks.
       responses:
         '200':
-          description: A list of stock ratings
+          description: A list of stocks
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  stock_ratings:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        ticker:
-                          type: string
-                          example: "BSBR"
-                        target_from:
-                          type: number
-                          format: float
-                          example: 4.20
-                        target_to:
-                          type: number
-                          format: float
-                          example: 4.70
-                        company:
-                          type: string
-                          example: "Banco Santander (Brasil)"
-                        action:
-                          type: string
-                          example: "upgraded by"
-                        brokerage:
-                          type: string
-                          example: "The Goldman Sachs Group"
-                        rating_from:
-                          type: string
-                          example: "Sell"
-                        rating_to:
-                          type: string
-                          example: "Neutral"
-                        time:
-                          type: string
-                          format: date-time
-                          example: "2025-01-13T00:30:05.813548892Z"
-                        recommendation:
-                          type: string
-                          enum:
-                            - Buy
-                            - Hold
-                            - Sell
-                            - Outperform
-                            - Underperform
-                          example: "Buy"
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockBase'
         '500':
           description: Internal server error
         '503':
           description: Downstream service unavailable
+
+  /stocks/{ticker}:
+    get:
+      summary: Get detailed information about a stock
+      description: Returns detailed information about a specific stock, including ratings.
+      parameters:
+        - name: ticker
+          in: path
+          required: true
+          description: The stock ticker symbol
+          schema:
+            type: string
+            example: "AAPL"
+      responses:
+        '200':
+          description: Detailed stock information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDetails'
+        '404':
+          description: Stock not found
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    StockBase:
+      type: object
+      properties:
+        ticker:
+          type: string
+          example: "AAPL"
+        company_name:
+          type: string
+          example: "Apple Inc."
+        current_price:
+          type: string
+          example: "178.52"
+        recommendation:
+          type: string
+          enum:
+            - Buy
+            - Hold
+            - Sell
+            - Outperform
+            - Underperform
+          example: "Buy"
+
+    StockRating:
+      type: object
+      properties:
+        target_from:
+          type: string
+          example: "150.00"
+        target_to:
+          type: string
+          example: "200.00"
+        action:
+          type: string
+          example: "upgraded by"
+        brokerage:
+          type: string
+          example: "Goldman Sachs"
+        rating_from:
+          type: string
+          example: "Hold"
+        rating_to:
+          type: string
+          example: "Buy"
+        time:
+          type: string
+          format: date-time
+          example: "2025-01-13T00:30:05Z"
+
+    StockDetails:
+      type: object
+      properties:
+        stock_base:
+          $ref: '#/components/schemas/StockBase'
+        stock_ratings:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockRating'
