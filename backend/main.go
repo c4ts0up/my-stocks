@@ -1,18 +1,44 @@
 package main
 
 import (
+	"github.com/c4ts0up/my-stocks/backend/fetcher"
 	"github.com/c4ts0up/my-stocks/backend/models"
 	"github.com/c4ts0up/my-stocks/backend/presenter"
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
+	"strconv"
+	"time"
 )
+
+// Periodic fetcher (runs in the background)
+func startPeriodicFetchAll(interval int, baseUrl string, api fetcher.IFetcherApi) {
+	intervalDuration := time.Duration(interval) * time.Second
+	ticker := time.NewTicker(intervalDuration)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Println("🔄 Fetching data...")
+			_ = api.FetchAll(baseUrl)
+			log.Printf("✅ Data fetched")
+		}
+	}
+}
 
 func main() {
 	log.Printf("--- MyStocks v0.0.2 ---")
 
 	// Load environment variables (optional)
 	dsn := os.Getenv("DATABASE_URL")
+	fetchDelayStr := os.Getenv("FETCH_DELAY")
+	apiUrl := os.Getenv("API_URL")
+
+	fetchDelaySeconds, err := strconv.Atoi(fetchDelayStr)
+	if err != nil {
+		log.Fatalf("Failed to convert FETCH_DELAY to int: %v", err)
+	}
 	if dsn == "" {
 		dsn = "postgresql://root@localhost:26257/stocks_db?sslmode=disable"
 	}
@@ -26,6 +52,9 @@ func main() {
 			log.Printf("Error closing DB: %v", err)
 		}
 	}()
+
+	apiFetcher := fetcher.BasicStockFetcher{DB: models.DB, BearerToken: os.Getenv("API_BEARER_TOKEN")}
+	go startPeriodicFetchAll(fetchDelaySeconds, apiUrl, &apiFetcher)
 
 	// Set up the Gin router
 	router := gin.Default()
