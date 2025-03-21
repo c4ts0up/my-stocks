@@ -2,21 +2,21 @@ package presenter
 
 // StockBase shows the basic information regarding a stock
 type StockBase struct {
-	Ticker         string `json:"ticker"`
-	CompanyName    string `json:"company_name"`
-	CurrentPrice   string `json:"current_price"`
-	Recommendation string `json:"recommendation"`
+	Ticker         string  `json:"ticker"`
+	CompanyName    string  `json:"company_name"`
+	LastPrice      float64 `json:"last_price"`
+	Recommendation string  `json:"recommendation"`
 }
 
 // StockRating represents the information related to a stock rating
 type StockRating struct {
-	TargetFrom string `json:"target_from"`
-	TargetTo   string `json:"target_to"`
-	Action     string `json:"action"`
-	Brokerage  string `json:"brokerage"`
-	RatingFrom string `json:"rating_from"`
-	RatingTo   string `json:"rating_to"`
-	Time       string `json:"time"`
+	TargetFrom float64 `json:"target_from"`
+	TargetTo   float64 `json:"target_to"`
+	Action     string  `json:"action"`
+	Brokerage  string  `json:"brokerage"`
+	RatingFrom string  `json:"rating_from"`
+	RatingTo   string  `json:"rating_to"`
+	Time       string  `json:"time"`
 }
 
 // StockDetail represents the whole information of a stock and its details
