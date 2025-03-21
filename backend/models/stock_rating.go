@@ -5,6 +5,7 @@ import "time"
 // Stock represents an observed stock and its static information
 type Stock struct {
 	Ticker         string `gorm:"primaryKey"`
+	LastPrice      float64
 	Company        string
 	Recommendation string
 }

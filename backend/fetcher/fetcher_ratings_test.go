@@ -204,7 +204,8 @@ func TestFetchAll_MultiplePages(t *testing.T) {
 
 	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
 
-	err = fetcher.FetchAllRatings(server.URL)
+	var tickers []string
+	tickers, err = fetcher.FetchAllRatings(server.URL)
 	assert.NoError(t, err)
 
 	var stocks []models.StockRating
@@ -212,6 +213,8 @@ func TestFetchAll_MultiplePages(t *testing.T) {
 	assert.Len(t, stocks, 2)
 	assert.Equal(t, "BSBR", stocks[0].Ticker)
 	assert.Equal(t, "VYGR", stocks[1].Ticker)
+	assert.Equal(t, stocks[0].Ticker, tickers[0])
+	assert.Equal(t, stocks[1].Ticker, tickers[1])
 }
 
 // --- TEST CASE 9: FetchAllRatings fails on bad page ---
@@ -229,7 +232,7 @@ func TestFetchAll_FailsOnBadPage(t *testing.T) {
 
 	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
 
-	err = fetcher.FetchAllRatings(server.URL)
+	_, err = fetcher.FetchAllRatings(server.URL)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "received invalid response from API")
 }

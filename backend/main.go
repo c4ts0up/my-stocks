@@ -12,7 +12,7 @@ import (
 )
 
 // Periodic fetcher (runs in the background)
-func startPeriodicFetchAll(interval int, baseUrl string, api fetcher.IFetcherApi) {
+func startPeriodicFetchAll(interval int, ratingsUrl string, infoUrl string, api *fetcher.StockFetcher) {
 	intervalDuration := time.Duration(interval) * time.Second
 	ticker := time.NewTicker(intervalDuration)
 	defer ticker.Stop()
@@ -21,7 +21,7 @@ func startPeriodicFetchAll(interval int, baseUrl string, api fetcher.IFetcherApi
 		select {
 		case <-ticker.C:
 			log.Println("🔄 Fetching data...")
-			_ = api.FetchAll(baseUrl)
+			_ = api.FetchAll(ratingsUrl, infoUrl)
 			log.Printf("✅ Data fetched")
 		}
 	}
@@ -33,7 +33,11 @@ func main() {
 	// Load environment variables (optional)
 	dsn := os.Getenv("DATABASE_URL")
 	fetchDelayStr := os.Getenv("FETCH_DELAY_S")
-	apiUrl := os.Getenv("API_URL")
+
+	ratingsApiUrl := os.Getenv("RATINGS_API_URL")
+	ratingsApiToken := os.Getenv("RATINGS_API_TOKEN")
+	infoApiUrl := os.Getenv("INFO_API_URL")
+	infoApiToken := os.Getenv("INFO_API_TOKEN")
 
 	fetchDelaySeconds, err := strconv.Atoi(fetchDelayStr)
 	if err != nil {
@@ -53,14 +57,19 @@ func main() {
 		}
 	}()
 
-	apiFetcher := fetcher.BasicStockRatingsFetcher{DB: models.DB, BearerToken: os.Getenv("API_BEARER_TOKEN")}
-	go startPeriodicFetchAll(fetchDelaySeconds, apiUrl, &apiFetcher)
+	apiFetcher := fetcher.StockFetcher{
+		RatingsFetcher: &fetcher.BasicStockRatingsFetcher{DB: models.DB, BearerToken: ratingsApiToken},
+		InfoFetcher:    &fetcher.BasicStockInfoFetcher{DB: models.DB, BearerToken: infoApiToken},
+	}
+
+	go startPeriodicFetchAll(fetchDelaySeconds, ratingsApiUrl, infoApiUrl, &apiFetcher)
 
 	// Set up the Gin router
 	router := gin.Default()
 
 	// Define routes
-	router.GET("/stocks", presenter.GetStockRatings)
+	router.GET("/stocks", presenter.GetStocks)
+	router.GET("/stocks/:ticker", presenter.GetStockDetail)
 
 	// Start the server
 	log.Println("Server running at 0.0.0.0:8080")

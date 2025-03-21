@@ -71,7 +71,7 @@ func TestFetchStockInfo_OK(t *testing.T) {
 	mockResponse := `[{"ticker":"AAPL","open":211.51,"lastClose":214.1,"lastPrice":214.65,"percentage":0.26,"currency":"USD","companyName":"Apple Inc."}]`
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query().Get("ticker")
+		query := r.URL.Query().Get("tickers")
 		if query == "AAPL" {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(mockResponse))
@@ -87,6 +87,7 @@ func TestFetchStockInfo_OK(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "AAPL", stock.Ticker)
 	assert.Equal(t, "Apple Inc.", stock.Company)
+	assert.Equal(t, 214.65, stock.LastPrice)
 }
 
 // --- TEST CASE 6: SaveStockInfo works ---
@@ -114,7 +115,7 @@ func TestFetchAllInfo_MultipleTickers(t *testing.T) {
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query().Get("ticker")
+		query := r.URL.Query().Get("tickers")
 		if response, ok := responses[query]; ok {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(response))
@@ -130,7 +131,7 @@ func TestFetchAllInfo_MultipleTickers(t *testing.T) {
 
 	fetcher := BasicStockInfoFetcher{DB: db, BearerToken: mockToken}
 	tickers := []string{"AAPL", "GOOGL"}
-	err = fetcher.FetchAllInfo(tickers, server.URL+"?ticker")
+	err = fetcher.FetchAllInfo(tickers, server.URL+"?tickers")
 	assert.NoError(t, err)
 
 	var stocks []models.Stock
