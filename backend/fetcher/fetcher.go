@@ -85,10 +85,15 @@ func (s *BasicStockFetcher) FetchStockData(url string) ([]models.StockRating, st
 
 // SaveStockData saves stock data to the database (stub implementation). Supposes there are no conflicts in the API
 func (s *BasicStockFetcher) SaveStockData(stockList []models.StockRating) error {
-	log.Printf("Saving stock data to database\n")
+	log.Printf("Saving stock data to database")
 
+	// Upsert each stock record (insert or update)
 	for _, stock := range stockList {
-		if err := s.DB.Create(&stock).Error; err != nil {
+		err := s.DB.Where("ticker = ? AND time = ?", stock.Ticker, stock.Time).
+			Assign(stock).
+			FirstOrCreate(&stock).Error
+
+		if err != nil {
 			return err
 		}
 	}
@@ -114,6 +119,7 @@ func (s *BasicStockFetcher) FetchAll(url string) error {
 			return err
 		}
 
+		log.Printf("New suffix is %s\n", newSuffix)
 		// checks if there are more pages to fetch
 		if newSuffix == "" {
 			break
