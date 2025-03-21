@@ -32,7 +32,7 @@ func main() {
 
 	// Load environment variables (optional)
 	dsn := os.Getenv("DATABASE_URL")
-	fetchDelayStr := os.Getenv("FETCH_DELAY")
+	fetchDelayStr := os.Getenv("FETCH_DELAY_S")
 	apiUrl := os.Getenv("API_URL")
 
 	fetchDelaySeconds, err := strconv.Atoi(fetchDelayStr)
