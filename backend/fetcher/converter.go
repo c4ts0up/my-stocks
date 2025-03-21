@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// convertApiResponse converts StockRatingResponse to StockRating
-func convertApiResponse(resp models.StockRatingRaw) (models.StockRating, error) {
+// convertStockRatingsApiResponse converts StockRatingResponse to StockRating
+func convertStockRatingsApiResponse(resp models.StockRatingRaw) (models.StockRating, error) {
 	// Strip dollar signs and convert to float
 	targetFrom, err := parseDollarValue(resp.TargetFrom)
 	if err != nil {
@@ -30,7 +30,6 @@ func convertApiResponse(resp models.StockRatingRaw) (models.StockRating, error) 
 		Ticker:     resp.Ticker,
 		TargetFrom: targetFrom,
 		TargetTo:   targetTo,
-		Company:    resp.Company,
 		Action:     resp.Action,
 		Brokerage:  resp.Brokerage,
 		RatingFrom: resp.RatingFrom,

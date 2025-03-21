@@ -61,7 +61,7 @@ func (s *BasicStockRatingsFetcher) FetchStockRatings(url string) ([]models.Stock
 	// iterates through the stocks
 	var stockRatings []models.StockRating
 	for _, rawStock := range apiResponses.Stocks {
-		stock, err := convertApiResponse(rawStock)
+		stock, err := convertStockRatingsApiResponse(rawStock)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to parse stock data, got %v", err)
 		}
