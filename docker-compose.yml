@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  cockroachdb:
+    image: cockroachdb/cockroach:latest
+    container_name: cockroach
+    command: start-single-node --insecure
+    ports:
+      - "26257:26257"
+      - "8081:8080"
+    environment:
+      - COCKROACH_USER=root
+    networks:
+      - app-network
+    volumes:
+      - cockroach-data:/cockroach/cockroach-data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: my-stocks-backend
+    environment:
+      - DATABASE_URL=postgresql://root@cockroachdb:26257/stocks_db?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      - cockroachdb
+    networks:
+      - app-network
+
+volumes:
+  cockroach-data:
+
+networks:
+  app-network:
+    driver: bridge
