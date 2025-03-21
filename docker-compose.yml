@@ -22,6 +22,9 @@ services:
     container_name: my-stocks-backend
     environment:
       - DATABASE_URL=postgresql://root@cockroachdb:26257/stocks_db?sslmode=disable
+      - FETCH_DELAY_S=15
+      - API_URL=https://8j5baasof2.execute-api.us-west-2.amazonaws.com/production/swechallenge/list
+      - API_BEARER_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdHRlbXB0cyI6MSwiZW1haWwiOiJhbHZhcm8uYmFjY2EucGVuYUBnbWFpbC5jb20iLCJleHAiOjE3NDI1MDI0NzYsImlkIjoiMCIsInBhc3N3b3JkIjoiJyBPUiAnMSc9JzEifQ.G6lKAH0mJdLHkvl1TCez8uqte5t_yHTVBY_HW7_FjN0
     ports:
       - "8080:8080"
     depends_on:
