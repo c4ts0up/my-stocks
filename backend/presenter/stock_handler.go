@@ -12,15 +12,16 @@ import (
 // ConvertStockRating converts a DB model to a response model
 func ConvertStockRating(dbModel models.StockRating) presenter.StockRatingResponse {
 	return presenter.StockRatingResponse{
-		Ticker:     dbModel.Ticker,
-		TargetFrom: formatFloat(dbModel.TargetFrom),
-		TargetTo:   formatFloat(dbModel.TargetTo),
-		Company:    dbModel.Company,
-		Action:     dbModel.Action,
-		Brokerage:  dbModel.Brokerage,
-		RatingFrom: dbModel.RatingFrom,
-		RatingTo:   dbModel.RatingTo,
-		Time:       dbModel.Time.Format("2006-01-02T15:04:05Z"),
+		Ticker:         dbModel.Ticker,
+		TargetFrom:     formatFloat(dbModel.TargetFrom),
+		TargetTo:       formatFloat(dbModel.TargetTo),
+		Company:        dbModel.Company,
+		Action:         dbModel.Action,
+		Brokerage:      dbModel.Brokerage,
+		RatingFrom:     dbModel.RatingFrom,
+		RatingTo:       dbModel.RatingTo,
+		Time:           dbModel.Time.Format("2006-01-02T15:04:05Z"),
+		Recommendation: "Buy",
 	}
 }
 
