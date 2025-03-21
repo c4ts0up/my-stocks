@@ -33,7 +33,11 @@ func main() {
 	// Load environment variables (optional)
 	dsn := os.Getenv("DATABASE_URL")
 	fetchDelayStr := os.Getenv("FETCH_DELAY_S")
-	apiUrl := os.Getenv("API_URL")
+
+	ratingsApiUrl := os.Getenv("RATINGS_API_URL")
+	ratingsApiToken := os.Getenv("RATINGS_API_TOKEN")
+	infoApiUrl := os.Getenv("INFO_API_URL")
+	infoApiToken := os.Getenv("INFO_API_TOKEN")
 
 	fetchDelaySeconds, err := strconv.Atoi(fetchDelayStr)
 	if err != nil {
@@ -53,7 +57,11 @@ func main() {
 		}
 	}()
 
-	apiFetcher := fetcher.BasicStockRatingsFetcher{DB: models.DB, BearerToken: os.Getenv("API_BEARER_TOKEN")}
+	apiFetcher := fetcher.StockFetcher{
+		RatingsFetcher: &fetcher.BasicStockRatingsFetcher{DB: models.DB, BearerToken: ratingsApiToken},
+		InfoFetcher:    &fetcher.BasicStockInfoFetcher{DB: models.DB, BearerToken: infoApiToken},
+	}
+
 	go startPeriodicFetchAll(fetchDelaySeconds, apiUrl, &apiFetcher)
 
 	// Set up the Gin router
