@@ -2,12 +2,12 @@ package fetcher
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/c4ts0up/my-stocks/backend/models"
 	"gorm.io/gorm"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type BasicStockInfoFetcher struct {
@@ -16,10 +16,20 @@ type BasicStockInfoFetcher struct {
 }
 
 // FetchStockInfo fetches stock data from Algobook Stock API
-func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, url string) (models.Stock, error) {
-	finalUrl := fmt.Sprintf("https://stocks.algobook.info/api/v1/stocks?tickers=%s", ticker) // FIXME: unburn
+func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, baseUrl string) (models.Stock, error) {
 
-	resp, err := http.Get(finalUrl)
+	// Parse the base URL
+	u, err := url.Parse(baseUrl)
+	if err != nil {
+		return models.Stock{}, fmt.Errorf("invalid base URL: %w", err)
+	}
+
+	// Add the ticker as a query parameter
+	q := u.Query()
+	q.Set("ticker", ticker)
+	u.RawQuery = q.Encode()
+
+	resp, err := http.Get(u.String())
 	if err != nil {
 		return models.Stock{}, fmt.Errorf("failed to fetch data for %s: %w", ticker, err)
 	}
@@ -62,10 +72,6 @@ func (b *BasicStockInfoFetcher) SaveStockInfo(stock models.Stock) error {
 
 // FetchAllInfo fetches and saves data for all given tickers
 func (b *BasicStockInfoFetcher) FetchAllInfo(tickers []string, url string) error {
-	if len(tickers) == 0 {
-		return errors.New("no tickers provided")
-	}
-
 	for _, ticker := range tickers {
 		stock, err := b.FetchStockInfo(ticker, url)
 		if err != nil {
