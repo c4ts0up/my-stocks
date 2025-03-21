@@ -39,8 +39,9 @@ func convertApiResponse(resp models.StockRatingRaw) (models.StockRating, error) 
 	}, nil
 }
 
-// parseDollarValue converts "$4.20" -> 4.20
+// parseDollarValue converts "$4.20" -> 4.20. It follows USA's money convention (, for 000's, . dor decimals)
 func parseDollarValue(value string) (float64, error) {
 	cleanValue := strings.ReplaceAll(value, "$", "")
+	cleanValue = strings.ReplaceAll(cleanValue, ",", "")
 	return strconv.ParseFloat(cleanValue, 64)
 }
