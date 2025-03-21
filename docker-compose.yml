@@ -17,8 +17,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: my-stocks-backend
     environment:
       - DATABASE_URL=postgresql://root@cockroachdb:26257/stocks_db?sslmode=disable
