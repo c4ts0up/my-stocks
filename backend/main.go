@@ -12,7 +12,7 @@ import (
 )
 
 // Periodic fetcher (runs in the background)
-func startPeriodicFetchAll(interval int, baseUrl string, api fetcher.IFetcherApi) {
+func startPeriodicFetchAll(interval int, ratingsUrl string, infoUrl string, api *fetcher.StockFetcher) {
 	intervalDuration := time.Duration(interval) * time.Second
 	ticker := time.NewTicker(intervalDuration)
 	defer ticker.Stop()
@@ -21,7 +21,7 @@ func startPeriodicFetchAll(interval int, baseUrl string, api fetcher.IFetcherApi
 		select {
 		case <-ticker.C:
 			log.Println("🔄 Fetching data...")
-			_ = api.FetchAll(baseUrl)
+			_ = api.FetchAll(ratingsUrl, infoUrl)
 			log.Printf("✅ Data fetched")
 		}
 	}
@@ -62,7 +62,7 @@ func main() {
 		InfoFetcher:    &fetcher.BasicStockInfoFetcher{DB: models.DB, BearerToken: infoApiToken},
 	}
 
-	go startPeriodicFetchAll(fetchDelaySeconds, apiUrl, &apiFetcher)
+	go startPeriodicFetchAll(fetchDelaySeconds, ratingsApiUrl, infoApiUrl, &apiFetcher)
 
 	// Set up the Gin router
 	router := gin.Default()
