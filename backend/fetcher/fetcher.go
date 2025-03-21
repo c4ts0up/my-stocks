@@ -110,12 +110,14 @@ func (s *BasicStockFetcher) FetchAll(url string) error {
 		// pulls
 		stockRatings, newSuffix, err := s.FetchStockData(url + "?next_page=" + nextPage)
 		if err != nil {
+			log.Printf("Entered an error %e", err)
 			return err
 		}
 
 		// saves
 		err = s.SaveStockData(stockRatings)
 		if err != nil {
+			log.Printf("Entered an error %e", err)
 			return err
 		}
 
