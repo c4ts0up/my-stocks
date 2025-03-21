@@ -1,21 +1,24 @@
 package models
 
 import "time"
-import "gorm.io/gorm"
 
-// StockRating represents a single stock rating update
+// Stock represents an observed stock and its static information
+type Stock struct {
+	Ticker         string `gorm:"primaryKey"`
+	Company        string
+	Recommendation string
+}
+
+// StockRating represents the most recent stock rating given by some broker
 type StockRating struct {
-	gorm.Model               // Includes the ID uint as entry key
-	Ticker         string    `json:"ticker"`
-	TargetFrom     float64   `json:"target_from"` // TODO: can use uint64 to avoid floating error accumulation
-	TargetTo       float64   `json:"target_to"`
-	Company        string    `json:"company"`
-	Action         string    `json:"action"`
-	Brokerage      string    `json:"brokerage"`
-	RatingFrom     string    `json:"rating_from"`
-	RatingTo       string    `json:"rating_to"`
-	Time           time.Time `json:"time"`
-	Recommendation string    `json:"recommendation"`
+	Ticker     string `gorm:"primaryKey"`
+	Brokerage  string `gorm:"primaryKey"`
+	TargetFrom float64
+	TargetTo   float64
+	Action     string
+	RatingFrom string
+	RatingTo   string
+	Time       time.Time
 }
 
 // StockRatingRaw matches the raw stock structure in a response
