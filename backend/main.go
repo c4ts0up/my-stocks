@@ -60,7 +60,8 @@ func main() {
 	router := gin.Default()
 
 	// Define routes
-	router.GET("/stocks", presenter.GetStockRatings)
+	router.GET("/stocks", presenter.GetStocks)
+	router.GET("/stocks/:ticker", presenter.GetStockDetail)
 
 	// Start the server
 	log.Println("Server running at 0.0.0.0:8080")
