@@ -94,9 +94,22 @@ func (s *BasicStockRatingsFetcher) SaveStockRatings(stockList []models.StockRati
 	return nil
 }
 
+// GetStockTickers gets the tickers from the StockRating list obtained after fetching
+func (s *BasicStockRatingsFetcher) GetStockTickers(stockRatings []models.StockRating) []string {
+	log.Printf("Extracting stock tickers")
+
+	tickers := make([]string, len(stockRatings))
+	for i, v := range stockRatings {
+		tickers[i] = v.Ticker
+	}
+
+	return tickers
+}
+
 // FetchAllRatings fetches all the pages in the database and saves them in the ORM
-func (s *BasicStockRatingsFetcher) FetchAllRatings(url string) error {
+func (s *BasicStockRatingsFetcher) FetchAllRatings(url string) ([]string, error) {
 	nextPage := ""
+	var tickers []string
 
 	for {
 
@@ -104,17 +117,19 @@ func (s *BasicStockRatingsFetcher) FetchAllRatings(url string) error {
 		stockRatings, newSuffix, err := s.FetchStockRatings(url + "?next_page=" + nextPage)
 		if err != nil {
 			log.Printf("Entered an error %e", err)
-			return err
+			return []string{}, err
 		}
 
 		// saves
 		err = s.SaveStockRatings(stockRatings)
 		if err != nil {
 			log.Printf("Entered an error %e", err)
-			return err
+			return []string{}, err
 		}
 
-		log.Printf("New suffix is %s\n", newSuffix)
+		// adds tickers to return
+		tickers = append(tickers, s.GetStockTickers(stockRatings)...)
+
 		// checks if there are more pages to fetch
 		if newSuffix == "" {
 			break
@@ -122,5 +137,5 @@ func (s *BasicStockRatingsFetcher) FetchAllRatings(url string) error {
 		nextPage = newSuffix
 	}
 
-	return nil
+	return tickers, nil
 }

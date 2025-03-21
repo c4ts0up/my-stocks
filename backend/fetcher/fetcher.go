@@ -4,15 +4,30 @@ package fetcher
 // TODO: fetcher for stock info
 // TODO: full fetcher interface
 
-type IStockFetcher struct {
-	ratingsFetcher *IStockRatingsFetcher
-	infoFetcher    *IStockInfoFetcher
+type StockFetcher struct {
+	RatingsFetcher IStockRatingsFetcher
+	InfoFetcher    IStockInfoFetcher
 }
 
 type IStockRatingsFetcher interface {
-	FetchAllRatings(url string) error
+	FetchAllRatings(url string) ([]string, error)
 }
 
 type IStockInfoFetcher interface {
 	FetchAllInfo(tickers []string, url string) error
+}
+
+func (f *StockFetcher) FetchAll(ratingsUrl string, infoUrl string) error {
+	// fetches rating
+	tickers, err := f.RatingsFetcher.FetchAllRatings(ratingsUrl)
+	if err != nil {
+		return err
+	}
+	// fetches info
+	err = f.InfoFetcher.FetchAllInfo(tickers, infoUrl)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

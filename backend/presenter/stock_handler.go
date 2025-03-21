@@ -2,50 +2,74 @@ package presenter
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/c4ts0up/my-stocks/backend/models"
-	"github.com/c4ts0up/my-stocks/backend/presenter/models"
+	presenter "github.com/c4ts0up/my-stocks/backend/presenter/models"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"time"
 )
 
-// ConvertStockRating converts a DB model to a response model
-func ConvertStockRating(dbModel models.StockRating) presenter.StockRatingResponse {
-	return presenter.StockRatingResponse{
-		Ticker:         dbModel.Ticker,
-		TargetFrom:     formatFloat(dbModel.TargetFrom),
-		TargetTo:       formatFloat(dbModel.TargetTo),
-		Company:        dbModel.Company,
-		Action:         dbModel.Action,
-		Brokerage:      dbModel.Brokerage,
-		RatingFrom:     dbModel.RatingFrom,
-		RatingTo:       dbModel.RatingTo,
-		Time:           dbModel.Time.Format("2006-01-02T15:04:05Z"),
-		Recommendation: "Buy",
-	}
-}
+// GetStocks handles GET /stocks
+func GetStocks(c *gin.Context) {
+	var stocks []models.Stock
 
-// Helper to format floats cleanly
-func formatFloat(value float64) string {
-	return fmt.Sprintf("%.2f", value)
-}
-
-// GetStockRatings handles the GET /stocks endpoint
-func GetStockRatings(c *gin.Context) {
-	var stockRatings []models.StockRating
-
-	// Query database for all stock ratings
-	if result := models.DB.Find(&stockRatings); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch stock ratings"})
+	if result := models.DB.Find(&stocks); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch stocks"})
 		return
 	}
 
-	// Convert from DB models to response models
-	var responseRatings []presenter.StockRatingResponse
-	for _, stock := range stockRatings {
-		responseRatings = append(responseRatings, ConvertStockRating(stock))
+	stockBases := make([]presenter.StockBase, len(stocks))
+	for i, s := range stocks {
+		stockBases[i] = presenter.StockBase{
+			Ticker:         s.Ticker,
+			CompanyName:    s.Company,
+			LastPrice:      s.LastPrice,
+			Recommendation: s.Recommendation,
+		}
 	}
 
-	// Return the final response
-	c.JSON(http.StatusOK, gin.H{"stock_ratings": responseRatings})
+	c.JSON(http.StatusOK, stockBases)
+}
+
+// GetStockDetail handles GET /stocks/:ticker
+func GetStockDetail(c *gin.Context) {
+	ticker := c.Param("ticker")
+
+	var stock models.Stock
+	if result := models.DB.Where("ticker = ?", ticker).First(&stock); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "stock not found"})
+		return
+	}
+
+	var stockRatings []models.StockRating
+	models.DB.Where("ticker = ?", ticker).Find(&stockRatings)
+
+	ratings := make([]presenter.StockRating, len(stockRatings))
+	for i, r := range stockRatings {
+		ratings[i] = presenter.StockRating{
+			TargetFrom: r.TargetFrom,
+			TargetTo:   r.TargetTo,
+			Action:     r.Action,
+			Brokerage:  r.Brokerage,
+			RatingFrom: r.RatingFrom,
+			RatingTo:   r.RatingTo,
+			Time:       r.Time.Format(time.RFC3339Nano),
+		}
+	}
+
+	response := presenter.StockDetail{
+		StockBase: presenter.StockBase{
+			Ticker:         stock.Ticker,
+			CompanyName:    stock.Company,
+			LastPrice:      stock.LastPrice,
+			Recommendation: stock.Recommendation,
+		},
+		StockRatings: ratings,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func formatFloat(value float64) string {
+	return fmt.Sprintf("%.2f", value)
 }
