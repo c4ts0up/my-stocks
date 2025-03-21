@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	log.Printf("--- MyStocks v0.0.2 ---")
+
 	// Load environment variables (optional)
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -32,8 +34,8 @@ func main() {
 	router.GET("/stocks", presenter.GetStockRatings)
 
 	// Start the server
-	log.Println("Server running at http://localhost:8080")
-	if err := router.Run("localhost:8080"); err != nil {
+	log.Println("Server running at 0.0.0.0:8080")
+	if err := router.Run("0.0.0.0:8080"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
