@@ -10,13 +10,15 @@ import (
 	"testing"
 )
 
+const mockTocken = "mock-token-123"
+
 // --- TEST CASE 1: INVALID URL ---
 func TestFetchStockData_InvalidURL(t *testing.T) {
-	fetcher := BasicStockFetcher{}
+	fetcher := BasicStockFetcher{BearerToken: mockTocken}
 
 	_, _, err := fetcher.FetchStockData(":://bad-url")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to fetch data")
+	assert.Contains(t, err.Error(), "failed to create request")
 }
 
 // --- TEST CASE 2: DOWNSTREAM ERROR ---
@@ -27,7 +29,7 @@ func TestFetchStockData_WrongResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{}
+	fetcher := BasicStockFetcher{BearerToken: mockTocken}
 	_, _, err := fetcher.FetchStockData(server.URL)
 
 	assert.Error(t, err)
@@ -44,7 +46,7 @@ func TestFetchStockData_ReadBodyError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{}
+	fetcher := BasicStockFetcher{BearerToken: mockTocken}
 
 	_, _, err := fetcher.FetchStockData(server.URL)
 	if err == nil || err.Error() != "failed to read response body" {
@@ -61,7 +63,7 @@ func TestFetchStockData_ParseJsonError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{}
+	fetcher := BasicStockFetcher{BearerToken: mockTocken}
 
 	_, _, err := fetcher.FetchStockData(server.URL)
 	if err == nil || err.Error() != "failed to parse JSON response" {
@@ -94,7 +96,7 @@ func TestFetchStockData_OK(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{}
+	fetcher := BasicStockFetcher{BearerToken: mockTocken}
 
 	stocks, nextPage, err := fetcher.FetchStockData(server.URL)
 	if err != nil {
@@ -123,7 +125,7 @@ func TestSaveStockData(t *testing.T) {
 	}
 	_ = db.AutoMigrate(&models.StockRating{})
 
-	fetcher := BasicStockFetcher{DB: db}
+	fetcher := BasicStockFetcher{DB: db, BearerToken: mockTocken}
 
 	stockList := []models.StockRating{
 		{Ticker: "AAPL", Company: "Apple Inc."},
@@ -140,4 +142,94 @@ func TestSaveStockData(t *testing.T) {
 	if count != 2 {
 		t.Errorf("expected 2 rows in database, got %d", count)
 	}
+}
+
+// --- TEST CASE 7: Fetcher without Bearer Token ---
+func TestFetchStockData_MissingBearerToken(t *testing.T) {
+	// Simulates a server returning 500
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	fetcher := BasicStockFetcher{}
+	_, _, err := fetcher.FetchStockData(server.URL)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no bearer token provided")
+}
+
+// --- TEST CASE 8: FetchAll with multiple pages ---
+func TestFetchAll_MultiplePages(t *testing.T) {
+	responses := []string{
+		`{"items": [{
+            "ticker": "BSBR",
+            "target_from": "$4.20",
+            "target_to": "$4.70",
+            "company": "Banco Santander (Brasil)",
+            "action": "upgraded by",
+            "brokerage": "The Goldman Sachs Group",
+            "rating_from": "Sell",
+            "rating_to": "Neutral",
+            "time": "2025-01-13T00:30:05.813548892Z"
+        }], "next_page": "VYGR"}`,
+		`{"items": [{
+            "ticker": "VYGR",
+            "target_from": "$11.00",
+            "target_to": "$9.00",
+            "company": "Voyager Therapeutics",
+            "action": "reiterated by",
+            "brokerage": "Wedbush",
+            "rating_from": "Outperform",
+            "rating_to": "Outperform",
+            "time": "2025-01-14T00:30:05.813548892Z"
+        }], "next_page": ""}`,
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		page := r.URL.Query().Get("next_page")
+		if page == "VYGR" {
+			_, _ = w.Write([]byte(responses[1]))
+		} else {
+			_, _ = w.Write([]byte(responses[0]))
+		}
+	}))
+	defer server.Close()
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to database: %v", err)
+	}
+	_ = db.AutoMigrate(&models.StockRating{})
+
+	fetcher := BasicStockFetcher{DB: db, BearerToken: mockTocken}
+
+	err = fetcher.FetchAll(server.URL)
+	assert.NoError(t, err)
+
+	var stocks []models.StockRating
+	db.Find(&stocks)
+	assert.Len(t, stocks, 2)
+	assert.Equal(t, "BSBR", stocks[0].Ticker)
+	assert.Equal(t, "VYGR", stocks[1].Ticker)
+}
+
+// --- TEST CASE 9: FetchAll fails on bad page ---
+func TestFetchAll_FailsOnBadPage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to database: %v", err)
+	}
+	_ = db.AutoMigrate(&models.StockRating{})
+
+	fetcher := BasicStockFetcher{DB: db, BearerToken: mockTocken}
+
+	err = fetcher.FetchAll(server.URL)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "received invalid response from API")
 }

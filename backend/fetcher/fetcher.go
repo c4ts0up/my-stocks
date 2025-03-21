@@ -7,29 +7,51 @@ import (
 	"github.com/c4ts0up/my-stocks/backend/models"
 	"gorm.io/gorm"
 	"io"
+	"log"
 	"net/http"
 )
 
 type IFetcherApi interface {
 	FetchStockData(url string) ([]models.StockRating, string, error)
-	SaveStockData([]models.StockRatingRaw) error
+	SaveStockData([]models.StockRating) error
+	FetchAll(url string) error
 }
 
 // BasicStockFetcher implements a basic fetch
 type BasicStockFetcher struct {
-	DB *gorm.DB
+	DB          *gorm.DB
+	BearerToken string
 }
 
 // FetchStockData pulls data from an API and converts it
 func (s *BasicStockFetcher) FetchStockData(url string) ([]models.StockRating, string, error) {
+	log.Printf("Fetching stock data from %s\n", url)
 
-	resp, err := http.Get(url)
+	// Create a new HTTP request
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to fetch data from %v", url)
+		return nil, "", fmt.Errorf("failed to create request: %w", err)
+	}
+	if s.BearerToken == "" {
+		return nil, "", fmt.Errorf("no bearer token provided")
 	}
 
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.BearerToken))
+
+	// Execute the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to fetch data from %v: %w", url, err)
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", errors.New("received invalid response from API")
+		return nil, "", fmt.Errorf("received invalid response from API: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -63,11 +85,48 @@ func (s *BasicStockFetcher) FetchStockData(url string) ([]models.StockRating, st
 
 // SaveStockData saves stock data to the database (stub implementation). Supposes there are no conflicts in the API
 func (s *BasicStockFetcher) SaveStockData(stockList []models.StockRating) error {
+	log.Printf("Saving stock data to database")
 
+	// Upsert each stock record (insert or update)
 	for _, stock := range stockList {
-		if err := s.DB.Create(&stock).Error; err != nil {
+		err := s.DB.Where("ticker = ? AND time = ?", stock.Ticker, stock.Time).
+			Assign(stock).
+			FirstOrCreate(&stock).Error
+
+		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// FetchAll fetches all the pages in the database and saves them in the ORM
+func (s *BasicStockFetcher) FetchAll(url string) error {
+	nextPage := ""
+
+	for {
+
+		// pulls
+		stockRatings, newSuffix, err := s.FetchStockData(url + "?next_page=" + nextPage)
+		if err != nil {
+			log.Printf("Entered an error %e", err)
+			return err
+		}
+
+		// saves
+		err = s.SaveStockData(stockRatings)
+		if err != nil {
+			log.Printf("Entered an error %e", err)
+			return err
+		}
+
+		log.Printf("New suffix is %s\n", newSuffix)
+		// checks if there are more pages to fetch
+		if newSuffix == "" {
+			break
+		}
+		nextPage = newSuffix
 	}
 
 	return nil

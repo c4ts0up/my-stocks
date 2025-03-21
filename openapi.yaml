@@ -6,4 +6,63 @@ info:
 servers:
   - url: 'https'
 paths:
-  
+  /stocks:
+    get:
+      summary: Get stock ratings
+      description: Returns a list of stock ratings.
+      responses:
+        '200':
+          description: A list of stock ratings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stock_ratings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ticker:
+                          type: string
+                          example: "BSBR"
+                        target_from:
+                          type: number
+                          format: float
+                          example: 4.20
+                        target_to:
+                          type: number
+                          format: float
+                          example: 4.70
+                        company:
+                          type: string
+                          example: "Banco Santander (Brasil)"
+                        action:
+                          type: string
+                          example: "upgraded by"
+                        brokerage:
+                          type: string
+                          example: "The Goldman Sachs Group"
+                        rating_from:
+                          type: string
+                          example: "Sell"
+                        rating_to:
+                          type: string
+                          example: "Neutral"
+                        time:
+                          type: string
+                          format: date-time
+                          example: "2025-01-13T00:30:05.813548892Z"
+                        recommendation:
+                          type: string
+                          enum:
+                            - Buy
+                            - Hold
+                            - Sell
+                            - Outperform
+                            - Underperform
+                          example: "Buy"
+        '500':
+          description: Internal server error
+        '503':
+          description: Downstream service unavailable
