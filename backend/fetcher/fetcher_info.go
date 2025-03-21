@@ -6,6 +6,7 @@ import (
 	"github.com/c4ts0up/my-stocks/backend/models"
 	"gorm.io/gorm"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -17,7 +18,6 @@ type BasicStockInfoFetcher struct {
 
 // FetchStockInfo fetches stock data from Algobook Stock API
 func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, baseUrl string) (models.Stock, error) {
-
 	// Parse the base URL
 	u, err := url.Parse(baseUrl)
 	if err != nil {
@@ -26,8 +26,10 @@ func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, baseUrl string) (m
 
 	// Add the ticker as a query parameter
 	q := u.Query()
-	q.Set("ticker", ticker)
+	q.Set("tickers", ticker)
 	u.RawQuery = q.Encode()
+
+	log.Printf("Fetching stock info from %s", u.String())
 
 	resp, err := http.Get(u.String())
 	if err != nil {
@@ -73,6 +75,7 @@ func (b *BasicStockInfoFetcher) SaveStockInfo(stock models.Stock) error {
 
 // FetchAllInfo fetches and saves data for all given tickers
 func (b *BasicStockInfoFetcher) FetchAllInfo(tickers []string, url string) error {
+
 	for _, ticker := range tickers {
 		stock, err := b.FetchStockInfo(ticker, url)
 		if err != nil {
