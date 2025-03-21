@@ -6,6 +6,7 @@ import (
 	presenter "github.com/c4ts0up/my-stocks/backend/presenter/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 // GetStocks handles GET /stocks
@@ -22,7 +23,7 @@ func GetStocks(c *gin.Context) {
 		stockBases[i] = presenter.StockBase{
 			Ticker:         s.Ticker,
 			CompanyName:    s.Company,
-			CurrentPrice:   "N/A", // Placeholder for now
+			LastPrice:      s.LastPrice,
 			Recommendation: s.Recommendation,
 		}
 	}
@@ -46,13 +47,13 @@ func GetStockDetail(c *gin.Context) {
 	ratings := make([]presenter.StockRating, len(stockRatings))
 	for i, r := range stockRatings {
 		ratings[i] = presenter.StockRating{
-			TargetFrom: formatFloat(r.TargetFrom),
-			TargetTo:   formatFloat(r.TargetTo),
+			TargetFrom: r.TargetFrom,
+			TargetTo:   r.TargetTo,
 			Action:     r.Action,
 			Brokerage:  r.Brokerage,
 			RatingFrom: r.RatingFrom,
 			RatingTo:   r.RatingTo,
-			Time:       r.Time.Format("2006-01-02T15:04:05Z"),
+			Time:       r.Time.Format(time.RFC3339Nano),
 		}
 	}
 
@@ -60,7 +61,7 @@ func GetStockDetail(c *gin.Context) {
 		StockBase: presenter.StockBase{
 			Ticker:         stock.Ticker,
 			CompanyName:    stock.Company,
-			CurrentPrice:   "N/A", // Placeholder
+			LastPrice:      stock.LastPrice,
 			Recommendation: stock.Recommendation,
 		},
 		StockRatings: ratings,
