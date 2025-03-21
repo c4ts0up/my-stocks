@@ -128,8 +128,8 @@ func TestSaveStockData(t *testing.T) {
 	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
 
 	stockList := []models.StockRating{
-		{Ticker: "AAPL", Company: "Apple Inc."},
-		{Ticker: "GOOGL", Company: "Alphabet Inc."},
+		{Ticker: "AAPL"},
+		{Ticker: "GOOGL"},
 	}
 
 	err = fetcher.SaveStockRatings(stockList)
