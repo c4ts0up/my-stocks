@@ -130,7 +130,6 @@ func (s *BasicStockRatingsFetcher) FetchAllRatings(url string) ([]string, error)
 		// adds tickers to return
 		tickers = append(tickers, s.GetStockTickers(stockRatings)...)
 
-		log.Printf("New suffix is %s\n", newSuffix)
 		// checks if there are more pages to fetch
 		if newSuffix == "" {
 			break
