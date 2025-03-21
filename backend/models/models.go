@@ -30,7 +30,7 @@ func ConnectDB(dsn string, dbInstance ...*gorm.DB) error {
 	log.Println("✅ Connected to the database!")
 
 	// Auto-migrate schemas
-	err = DB.AutoMigrate(&StockRating{})
+	err = DB.AutoMigrate(&Stock{}, &StockRating{})
 	if err != nil {
 		return fmt.Errorf("failed to auto-migrate: %v", err)
 	}

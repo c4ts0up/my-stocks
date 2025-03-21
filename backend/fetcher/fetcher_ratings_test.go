@@ -14,9 +14,9 @@ const mockTocken = "mock-token-123"
 
 // --- TEST CASE 1: INVALID URL ---
 func TestFetchStockData_InvalidURL(t *testing.T) {
-	fetcher := BasicStockFetcher{BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	_, _, err := fetcher.FetchStockData(":://bad-url")
+	_, _, err := fetcher.FetchStockRatings(":://bad-url")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create request")
 }
@@ -29,8 +29,8 @@ func TestFetchStockData_WrongResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{BearerToken: mockTocken}
-	_, _, err := fetcher.FetchStockData(server.URL)
+	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
+	_, _, err := fetcher.FetchStockRatings(server.URL)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "received invalid response from API")
@@ -46,9 +46,9 @@ func TestFetchStockData_ReadBodyError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	_, _, err := fetcher.FetchStockData(server.URL)
+	_, _, err := fetcher.FetchStockRatings(server.URL)
 	if err == nil || err.Error() != "failed to read response body" {
 		t.Fatalf("expected 'failed to read response body', got %v", err)
 	}
@@ -63,9 +63,9 @@ func TestFetchStockData_ParseJsonError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	_, _, err := fetcher.FetchStockData(server.URL)
+	_, _, err := fetcher.FetchStockRatings(server.URL)
 	if err == nil || err.Error() != "failed to parse JSON response" {
 		t.Fatalf("expected 'failed to parse JSON response', got %v", err)
 	}
@@ -96,9 +96,9 @@ func TestFetchStockData_OK(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	stocks, nextPage, err := fetcher.FetchStockData(server.URL)
+	stocks, nextPage, err := fetcher.FetchStockRatings(server.URL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestFetchStockData_OK(t *testing.T) {
 	}
 }
 
-// --- TEST CASE 6: SaveStockData works ---
+// --- TEST CASE 6: SaveStockRatings works ---
 func TestSaveStockData(t *testing.T) {
 	// Use an in-memory SQLite database for testing
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -125,14 +125,14 @@ func TestSaveStockData(t *testing.T) {
 	}
 	_ = db.AutoMigrate(&models.StockRating{})
 
-	fetcher := BasicStockFetcher{DB: db, BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
 
 	stockList := []models.StockRating{
-		{Ticker: "AAPL", Company: "Apple Inc."},
-		{Ticker: "GOOGL", Company: "Alphabet Inc."},
+		{Ticker: "AAPL"},
+		{Ticker: "GOOGL"},
 	}
 
-	err = fetcher.SaveStockData(stockList)
+	err = fetcher.SaveStockRatings(stockList)
 	if err != nil {
 		t.Fatalf("unexpected error saving data: %v", err)
 	}
@@ -152,14 +152,14 @@ func TestFetchStockData_MissingBearerToken(t *testing.T) {
 	}))
 	defer server.Close()
 
-	fetcher := BasicStockFetcher{}
-	_, _, err := fetcher.FetchStockData(server.URL)
+	fetcher := BasicStockRatingsFetcher{}
+	_, _, err := fetcher.FetchStockRatings(server.URL)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no bearer token provided")
 }
 
-// --- TEST CASE 8: FetchAll with multiple pages ---
+// --- TEST CASE 8: FetchAllRatings with multiple pages ---
 func TestFetchAll_MultiplePages(t *testing.T) {
 	responses := []string{
 		`{"items": [{
@@ -202,9 +202,9 @@ func TestFetchAll_MultiplePages(t *testing.T) {
 	}
 	_ = db.AutoMigrate(&models.StockRating{})
 
-	fetcher := BasicStockFetcher{DB: db, BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
 
-	err = fetcher.FetchAll(server.URL)
+	err = fetcher.FetchAllRatings(server.URL)
 	assert.NoError(t, err)
 
 	var stocks []models.StockRating
@@ -214,7 +214,7 @@ func TestFetchAll_MultiplePages(t *testing.T) {
 	assert.Equal(t, "VYGR", stocks[1].Ticker)
 }
 
-// --- TEST CASE 9: FetchAll fails on bad page ---
+// --- TEST CASE 9: FetchAllRatings fails on bad page ---
 func TestFetchAll_FailsOnBadPage(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -227,9 +227,9 @@ func TestFetchAll_FailsOnBadPage(t *testing.T) {
 	}
 	_ = db.AutoMigrate(&models.StockRating{})
 
-	fetcher := BasicStockFetcher{DB: db, BearerToken: mockTocken}
+	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
 
-	err = fetcher.FetchAll(server.URL)
+	err = fetcher.FetchAllRatings(server.URL)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "received invalid response from API")
 }
