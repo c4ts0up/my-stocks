@@ -3,9 +3,28 @@ package models
 import (
 	"fmt"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
 )
+
+// NewTestDB sets up an in-memory SQLite database and populates it with stock ratings for testing
+func NewTestDB(stockRatings []StockRating) *gorm.DB {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect to in-memory database")
+	}
+
+	// Migrate the schema
+	_ = db.AutoMigrate(&Stock{}, &StockRating{})
+
+	// Insert the stock ratings into the test DB
+	for _, rating := range stockRatings {
+		db.Create(&rating)
+	}
+
+	return db
+}
 
 // DB holds the global database connection
 var DB *gorm.DB
@@ -54,4 +73,16 @@ func CloseDB() error {
 	}
 
 	return nil
+}
+
+// GetAllStocks retrieves all Stock entries from the database
+func GetAllStocks() ([]Stock, error) {
+	var stocks []Stock
+	result := DB.Find(&stocks)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return stocks, nil
 }
