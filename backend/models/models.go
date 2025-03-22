@@ -74,3 +74,15 @@ func CloseDB() error {
 
 	return nil
 }
+
+// GetAllStocks retrieves all Stock entries from the database
+func GetAllStocks() ([]Stock, error) {
+	var stocks []Stock
+	result := DB.Find(&stocks)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return stocks, nil
+}

@@ -10,7 +10,7 @@ import (
 // It takes a Stock, a StockRating, and a list of AnalysisSteps
 // and performs analysis.
 type IAnalyzerPipeline interface {
-	Analyze(stock *models.Stock, stockRating *models.StockRating, steps []IAnalysisStep)
+	Analyze(stock *models.Stock)
 }
 
 // IAnalysisStep represents a single step in the analysis pipeline
@@ -19,9 +19,7 @@ type IAnalysisStep interface {
 }
 
 // BasicAnalyzerPipeline is a concrete implementation of IAnalyzerPipeline
-type BasicAnalyzerPipeline struct {
-	Steps []IAnalysisStep // not really a fan of this bit. If it's already an attribute, why am I passing it in Analyze?
-}
+type BasicAnalyzerPipeline struct{}
 
 // Analyze runs the hardcoded analysis steps on the given stock
 func (b *BasicAnalyzerPipeline) Analyze(stock *models.Stock) {

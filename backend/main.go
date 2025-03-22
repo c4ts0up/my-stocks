@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/c4ts0up/my-stocks/backend/analyzer"
 	"github.com/c4ts0up/my-stocks/backend/fetcher"
 	"github.com/c4ts0up/my-stocks/backend/models"
 	"github.com/c4ts0up/my-stocks/backend/presenter"
@@ -27,12 +28,35 @@ func startPeriodicFetchAll(interval int, ratingsUrl string, infoUrl string, api 
 	}
 }
 
+func startPeriodicAnalysis(interval int, analyzerPipeline analyzer.IAnalyzerPipeline) {
+	intervalDuration := time.Duration(interval) * time.Second
+	ticker := time.NewTicker(intervalDuration)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Println("🔄 Getting all stocks ...")
+			stocks, err := models.GetAllStocks()
+			if err != nil {
+				log.Printf("Couldn't fetch all stocks, %e\n", err)
+			}
+
+			for _, stock := range stocks {
+				analyzerPipeline.Analyze(&stock)
+			}
+			log.Printf("✅ Data fetched")
+		}
+	}
+}
+
 func main() {
 	log.Printf("--- MyStocks v0.0.2 ---")
 
 	// Load environment variables (optional)
 	dsn := os.Getenv("DATABASE_URL")
 	fetchDelayStr := os.Getenv("FETCH_DELAY_S")
+	analysisDelayStr := os.Getenv("ANALYSIS_DELAY_S")
 
 	ratingsApiUrl := os.Getenv("RATINGS_API_URL")
 	ratingsApiToken := os.Getenv("RATINGS_API_TOKEN")
@@ -40,6 +64,10 @@ func main() {
 	infoApiToken := os.Getenv("INFO_API_TOKEN")
 
 	fetchDelaySeconds, err := strconv.Atoi(fetchDelayStr)
+	if err != nil {
+		log.Fatalf("Failed to convert FETCH_DELAY to int: %v", err)
+	}
+	analysisDelaySeconds, err := strconv.Atoi(analysisDelayStr)
 	if err != nil {
 		log.Fatalf("Failed to convert FETCH_DELAY to int: %v", err)
 	}
@@ -62,7 +90,10 @@ func main() {
 		InfoFetcher:    &fetcher.BasicStockInfoFetcher{DB: models.DB, BearerToken: infoApiToken},
 	}
 
+	analyzerPipeline := analyzer.BasicAnalyzerPipeline{}
+
 	go startPeriodicFetchAll(fetchDelaySeconds, ratingsApiUrl, infoApiUrl, &apiFetcher)
+	go startPeriodicAnalysis(analysisDelaySeconds, &analyzerPipeline)
 
 	// Set up the Gin router
 	router := gin.Default()
