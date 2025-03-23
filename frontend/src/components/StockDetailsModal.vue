@@ -10,18 +10,19 @@
       </span>
 
 
-      <h3 class="font-semibold text-gray-900">Ratings</h3>
-      <table>
-        <tbody v-for="rating in stock.stock_ratings" :key="rating.time" class="text-sm text-gray-700">
-          <tr>
-            <td>{{ formatDate(rating.time) }}</td>
-            <td>{{ rating.brokerage }}</td>
-            <td>{{ rating.rating_from }} → {{ rating.rating_to }}</td>
-          </tr>
+      <h3 class="mt-10 font-semibold text-gray-900">Ratings:</h3>
+      <table class="mt-2 mb-2">
+        <tbody v-for="rating in stock.stock_ratings" :key="rating.time" class="text-base text-gray-700">
+        <tr>
+          <td class="text-left px-2 py-1">{{ formatDate(rating.time) }}</td>
+          <td class="text-left px-2 py-1">{{ rating.brokerage }}</td>
+          <td class="text-left px-2 py-1">{{ rating.rating_from }} → {{ rating.rating_to }}</td>
+        </tr>
         </tbody>
       </table>
 
-      <div class="flex justify-center">
+
+      <div class="mt-10 flex justify-center">
         <button @click="$emit('close')" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition">Close</button>
       </div>
     </div>
