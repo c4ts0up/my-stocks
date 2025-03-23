@@ -11,7 +11,7 @@ services:
     environment:
       - COCKROACH_USER=root
     networks:
-      - app-network
+      - closed-network
     volumes:
       - cockroach-data:/cockroach/cockroach-data
 
@@ -27,11 +27,28 @@ services:
     depends_on:
       - cockroachdb
     networks:
-      - app-network
+      - closed-network
+      - open-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: my-stocks-frontend
+    environment:
+      - VITE_STOCKS_API_URL=http://localhost:8080
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - open-network
 
 volumes:
   cockroach-data:
 
 networks:
-  app-network:
+  closed-network:
+    driver: bridge
+  open-network:
     driver: bridge

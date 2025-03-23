@@ -74,9 +74,10 @@ func (m PriceChangePonderedRecommendation) Analyze(stock *models.Stock) {
 		"Sell": 0,
 	}
 
-	positiveTargets := []string{"Buy", "Overweight", "Outperform", "Market Outperform"}
-	neutralTargets := []string{"Neutral", "Equal Weight", "Perform", "Market Perform"}
-	negativeTargets := []string{"Sell", "Underweight", "Underperform", "Market Underperform"}
+	// FIXME: what if a new broker appears? Could use sentiment analysis to evaluate the rating against future stock changes.
+	positiveTargets := []string{"Buy", "Overweight", "Outperform", "Market Outperform", "Strong-Buy", "Sector Outperform", "Positive", "Outperformer", "Speculative Buy"}
+	neutralTargets := []string{"Neutral", "Equal Weight", "Perform", "Market Perform", "Hold", "Sector Perform", "Sector Weight", "In-Line", "Peer Perform"}
+	negativeTargets := []string{"Sell", "Underweight", "Underperform", "Market Underperform", "Sector Underperform", "Reduce", "Negative"}
 
 	// Fetch all stock ratings for this stock
 	var stockRatings []models.StockRating

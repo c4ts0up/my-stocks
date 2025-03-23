@@ -5,6 +5,7 @@ import (
 	"github.com/c4ts0up/my-stocks/backend/fetcher"
 	"github.com/c4ts0up/my-stocks/backend/models"
 	"github.com/c4ts0up/my-stocks/backend/presenter"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
@@ -97,6 +98,14 @@ func main() {
 
 	// Set up the Gin router
 	router := gin.Default()
+
+	// Enable CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{os.Getenv("FRONTEND_URL")},
+		AllowMethods:     []string{"GET"},
+		AllowHeaders:     []string{"Content-Type,Authorization"},
+		AllowCredentials: true,
+	}))
 
 	// Define routes
 	router.GET("/stocks", presenter.GetStocks)
