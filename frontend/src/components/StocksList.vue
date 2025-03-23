@@ -1,6 +1,6 @@
 <template>
   <div class="p-4">
-    <h1 class="text-3xl font-bold mb-4 text-green-600 text-center title-font">Stocks List</h1>
+    <h1 class="text-3xl font-bold mb-4 text-green-600 text-center title-font">MyStocks</h1>
     <div v-if="loading" class="text-center">Loading...</div>
     <div v-else-if="error" class="text-red-500">{{ error }}</div>
 
@@ -88,7 +88,6 @@ body {
 /* Title styling */
 h1.title-font {
   font-family: 'Poppins', sans-serif;
-  text-transform: uppercase;
   letter-spacing: 1px;
   font-size: clamp(1.5rem, 4vw, 2.5rem);
 }
