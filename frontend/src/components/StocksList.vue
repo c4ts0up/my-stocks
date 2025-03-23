@@ -22,7 +22,9 @@
           <span class="float-right">{{ stock.last_price.toFixed(2) }}</span>
         </td>
         <td class="p-2 border-b border-gray-300 text-center">
-          <span :class="getRecommendationClass(stock.recommendation)">{{ stock.recommendation }}</span>
+          <span :class="getRecommendationClass(stock.recommendation)">{{
+              stock.recommendation === "N/A" ? "" : stock.recommendation
+            }}</span>
         </td>
       </tr>
       </tbody>
