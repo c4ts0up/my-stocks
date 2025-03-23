@@ -1,24 +1,27 @@
 <template>
   <div class="p-4">
-    <h1 class="text-2xl font-bold mb-4">Stocks List</h1>
+    <h1 class="text-3xl font-bold mb-4 text-green-600 text-center title-font">Stocks List</h1>
     <div v-if="loading" class="text-center">Loading...</div>
     <div v-else-if="error" class="text-red-500">{{ error }}</div>
 
-    <table v-else class="table-auto w-full border-collapse border border-gray-300">
-      <thead class="bg-gray-200">
+    <table v-else class="table-auto w-full border-collapse max-w-[800px] mx-auto">
+      <thead>
       <tr>
-        <th class="p-2 border border-gray-300">Ticker</th>
-        <th class="p-2 border border-gray-300">Company Name</th>
-        <th class="p-2 border border-gray-300">Current Price</th>
-        <th class="p-2 border border-gray-300">Recommendation</th>
+        <th class="p-2 border-b border-gray-300 text-left">Ticker</th>
+        <th class="p-2 border-b border-gray-300 text-left">Company Name</th>
+        <th class="p-2 border-b border-gray-300 text-right">Current Price</th>
+        <th class="p-2 border-b border-gray-300">Recommendation</th>
       </tr>
       </thead>
       <tbody>
       <tr v-for="stock in stocks" :key="stock.ticker" class="cursor-pointer hover:bg-gray-100" @click="selectStock(stock.ticker)">
-        <td class="p-2 border border-gray-300 text-center">{{ stock.ticker }}</td>
-        <td class="p-2 border border-gray-300">{{ stock.company_name }}</td>
-        <td class="p-2 border border-gray-300 text-right">${{ stock.last_price.toFixed(2) }}</td>
-        <td class="p-2 border border-gray-300 text-center">
+        <td class="p-2 border-b border-gray-300 text-left">{{ stock.ticker }}</td>
+        <td class="p-2 border-b border-gray-300 text-left">{{ stock.company_name }}</td>
+        <td class="p-2 border-b border-gray-300 text-right">
+          <span class="float-left">USD</span>
+          <span class="float-right">{{ stock.last_price.toFixed(2) }}</span>
+        </td>
+        <td class="p-2 border-b border-gray-300 text-center">
           <span :class="getRecommendationClass(stock.recommendation)">{{ stock.recommendation }}</span>
         </td>
       </tr>
@@ -94,6 +97,85 @@ const getRecommendationClass = (recommendation: string) => {
 
 <style>
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-color: #f9fafb
+}
+/* Title styling */
+h1.title-font {
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+/* Table styling */
+table {
+  font-family: 'Inter', sans-serif;
+  color: #4b5563;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Table header styling */
+th {
+  font-weight: 600;
+  color: #374151;
+  padding: 0.5rem;
+}
+
+/* Table rows hover effect */
+tr:hover {
+  background-color: #f3f4f6;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Responsive table layout for mobile */
+@media (max-width: 640px) {
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block;
+  }
+
+  thead {
+    display: none; /* Hide headers on mobile */
+  }
+
+  tr {
+    border: 1px solid #ddd;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  td:last-child {
+    border-bottom: 0;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #374151;
+  }
+}
+
+/* Detail modal styling */
+div.fixed {
+  padding: 1rem;
+}
+
+div.bg-white {
+  width: 100%;
+  max-width: 400px;
 }
 </style>
