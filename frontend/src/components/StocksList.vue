@@ -14,45 +14,28 @@
       </tr>
       </thead>
       <tbody>
-      <tr v-for="stock in stocks" :key="stock.ticker" class="cursor-pointer hover:bg-gray-100" @click="selectStock(stock.ticker)">
-        <td class="p-2 border-b border-gray-300 text-left">{{ stock.ticker }}</td>
-        <td class="p-2 border-b border-gray-300 text-left">{{ stock.company_name }}</td>
-        <td class="p-2 border-b border-gray-300 text-right">
-          <span class="float-left">USD</span>
-          <span class="float-right">{{ stock.last_price.toFixed(2) }}</span>
-        </td>
-        <td class="p-2 border-b border-gray-300 text-center">
-          <span :class="getRecommendationClass(stock.recommendation)">{{
-              stock.recommendation === "N/A" ? "" : stock.recommendation
-            }}</span>
-        </td>
-      </tr>
+      <StockRow
+          v-for="stock in stocks"
+          :key="stock.ticker"
+          :stock="stock"
+          @select="selectStock"
+      />
       </tbody>
     </table>
 
-    <div v-if="selectedStock" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center">
-      <div class="bg-white p-4 rounded shadow-lg w-96">
-        <h2 class="text-xl font-bold mb-2">{{ selectedStock.stock_base.company_name }}</h2>
-        <p><strong>Ticker:</strong> {{ selectedStock.stock_base.ticker }}</p>
-        <p><strong>Price:</strong> ${{ selectedStock.stock_base.last_price.toFixed(2) }}</p>
-        <p><strong>Recommendation:</strong> {{ selectedStock.stock_base.recommendation }}</p>
-
-        <h3 class="mt-4 font-semibold">Ratings:</h3>
-        <ul>
-          <li v-for="rating in selectedStock.stock_ratings" :key="rating.time" class="text-sm">
-            {{ rating.brokerage }}: {{ rating.action }} from {{ rating.rating_from }} to {{ rating.rating_to }} ({{ rating.time }})
-          </li>
-        </ul>
-
-        <button @click="selectedStock = null" class="mt-4 px-4 py-2 bg-red-500 text-white rounded">Close</button>
-      </div>
-    </div>
+    <StockDetailsModal
+        v-if="selectedStock"
+        :stock="selectedStock"
+        @close="selectedStock = null"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import StockDetailsModal from "@/components/StockDetailsModal.vue";
+import StockRow from "@/components/StockRow.vue";
 
 const stocks = ref([]);
 const loading = ref(true);
@@ -171,13 +154,4 @@ tr:hover {
   }
 }
 
-/* Detail modal styling */
-div.fixed {
-  padding: 1rem;
-}
-
-div.bg-white {
-  width: 100%;
-  max-width: 400px;
-}
 </style>
