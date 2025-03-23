@@ -67,9 +67,18 @@ func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, baseUrl string) (m
 
 // SaveStockInfo saves a Stock model to the database
 func (b *BasicStockInfoFetcher) SaveStockInfo(stock models.Stock) error {
-	if err := b.DB.Save(&stock).Error; err != nil {
-		return fmt.Errorf("failed to save stock data for %s: %w", stock.Ticker, err)
+	result := b.DB.Model(&models.Stock{}).Where("ticker = ?", stock.Ticker).Updates(models.Stock{
+		LastPrice: stock.LastPrice,
+		Company:   stock.Company,
+	})
+
+	// If no rows were affected, it's a new stock, so we insert it
+	if result.RowsAffected == 0 {
+		if err := b.DB.Create(&stock).Error; err != nil {
+			return fmt.Errorf("failed to insert new stock data for %s: %w", stock.Ticker, err)
+		}
 	}
+
 	return nil
 }
 
