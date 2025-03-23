@@ -11,7 +11,7 @@ services:
     environment:
       - COCKROACH_USER=root
     networks:
-      - app-network
+      - closed-network
     volumes:
       - cockroach-data:/cockroach/cockroach-data
 
@@ -27,7 +27,8 @@ services:
     depends_on:
       - cockroachdb
     networks:
-      - app-network
+      - closed-network
+      - open-network
 
   frontend:
     build:
@@ -41,11 +42,13 @@ services:
     depends_on:
       - backend
     networks:
-      - app-network
+      - open-network
 
 volumes:
   cockroach-data:
 
 networks:
-  app-network:
+  closed-network:
+    driver: bridge
+  open-network:
     driver: bridge
