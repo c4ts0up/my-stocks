@@ -8,7 +8,7 @@
       <span class="float-right">{{ stock.last_price.toFixed(2) }}</span>
     </td>
     <td class="p-2 border-b border-gray-300 text-center">
-      <span :class="getRecommendationClass(stock.recommendation)">
+      <span :class="getRecommendationClass(stock.recommendation, SIZE.md)">
         {{ stock.recommendation === "N/A" ? "" : stock.recommendation }}
       </span>
     </td>
@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import {getRecommendationClass} from "@/utils/recommendationUtils.js";
+import {getRecommendationClass, SIZE} from "@/utils/recommendationUtils.js";
 
 const props = defineProps({
   stock: Object,
