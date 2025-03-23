@@ -57,48 +57,47 @@ components:
       properties:
         ticker:
           type: string
-          example: "AAPL"
+          example: "PFG"
         company_name:
           type: string
-          example: "Apple Inc."
-        current_price:
-          type: string
-          example: "178.52"
+          example: "Principal Financial Group, Inc"
+        last_price:
+          type: float
+          example: 178.52
         recommendation:
           type: string
           enum:
             - Buy
+            - N/A
             - Hold
             - Sell
-            - Outperform
-            - Underperform
-          example: "Buy"
+          example: "Sell"
 
     StockRating:
       type: object
       properties:
         target_from:
-          type: string
-          example: "150.00"
+          type: float
+          example: 69.0
         target_to:
-          type: string
-          example: "200.00"
+          type: float
+          example: 74.0
         action:
           type: string
-          example: "upgraded by"
+          example: "target raised by"
         brokerage:
           type: string
-          example: "Goldman Sachs"
+          example: "Wells Fargo & Company"
         rating_from:
           type: string
-          example: "Hold"
+          example: "Underweight"
         rating_to:
           type: string
-          example: "Buy"
+          example: "Underweight"
         time:
           type: string
           format: date-time
-          example: "2025-01-13T00:30:05Z"
+          example: "2025-02-20T00:30:06.968284Z"
 
     StockDetails:
       type: object
