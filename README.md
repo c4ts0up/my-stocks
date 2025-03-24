@@ -6,7 +6,7 @@
 
 ## 📝 Description
 A web app to retrieve, analyze and present stock 
-information. 
+information. Make sure to check out the [Wiki](https://github.com/c4ts0up/my-stocks/wiki) for more information.
 
 ## 🚀 Features
 - Tracks live stock prices
