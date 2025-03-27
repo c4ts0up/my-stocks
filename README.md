@@ -30,3 +30,15 @@ The backend will be deployed on ``http://localhost:8080`` while
 the frontend will be deployed on ``http://localhost:5173``
 
 ⚠️ **NOTE**: This deployment is not production safe.
+
+### `local.env`
+This file is necessary to deploy locally. It must be located in the root of the project directory. It requires the following variables:
+- `DATABASE_URL`
+- `FETCH_DELAY_S`
+- `ANALYSIS_DELAY_S`
+- `INFO_API_URL`
+- `INFO_API_TOKEN`
+- `RATINGS_API_URL`
+- `RATINGS_API_TOKEN`
+- `FRONTEND_URL`
+- `STOCKS_API_URL`
