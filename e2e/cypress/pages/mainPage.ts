@@ -12,6 +12,7 @@ export class MainPage extends BasePage {
         table: () => cy.get("table"),
         tableHeaders: () => cy.get("thead tr th", { timeout: 10000 }),
         tableRows: () => cy.get("table tbody tr"),
+        stockDetail: () => cy.get("div[class*='p-6']"),
         closeDetailButton: () => cy.get("button")
     }
 
