@@ -1,4 +1,5 @@
 import {BasePage} from "./basePage";
+import {BACKEND_GET_STOCKS_ENDPOINT} from "../support/e2e";
 
 /**
  * Represents MyStocks main page
@@ -9,9 +10,20 @@ export class MainPage extends BasePage {
     elements = {
         title: () => cy.get("h1"),
         table: () => cy.get("table"),
-        tableHeaders: () => cy.get("thead tr th"),
+        tableHeaders: () => cy.get("thead tr th", { timeout: 10000 }),
         tableRows: () => cy.get("table tbody tr"),
         closeDetailButton: () => cy.get("button")
+    }
+
+    visit() {
+        cy.intercept(
+            BACKEND_GET_STOCKS_ENDPOINT.method,
+            BACKEND_GET_STOCKS_ENDPOINT.resource
+        ).as("getStocks");
+
+        super.visit()
+
+        cy.wait("@getStocks").its("response.body").should("not.be.empty");
     }
 
     /**
@@ -39,6 +51,9 @@ export class MainPage extends BasePage {
      */
     getTableHeaders(): Cypress.Chainable<string[]> {
         return this.elements.tableHeaders()
-            .then(($headers) => [...$headers].map(header => header.innerText.trim()));
+            .should("have.length.at.least", 1)
+            .then(($headers) => {
+                return Cypress._.map($headers, (header) => header.innerText.trim());
+            });
     }
 }

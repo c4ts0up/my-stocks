@@ -6,6 +6,7 @@ export abstract class BasePage {
      * Visits the resource
      */
     visit() {
+        cy.log(`Visiting ${this.URL_RESOURCE}`)
         cy.visit(this.URL_RESOURCE)
     }
 }
