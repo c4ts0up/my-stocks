@@ -1,7 +1,10 @@
+import {BasePage} from "./basePage";
+
 /**
  * Represents MyStocks main page
  */
-export class MainPage {
+export class MainPage extends BasePage {
+    protected readonly URL_RESOURCE = "/";
 
     elements = {
         title: () => cy.get("h1"),
