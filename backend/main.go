@@ -63,6 +63,18 @@ func main() {
 	ratingsApiToken := os.Getenv("RATINGS_API_TOKEN")
 	infoApiUrl := os.Getenv("INFO_API_URL")
 	infoApiToken := os.Getenv("INFO_API_TOKEN")
+	maxDbConnectionRetriesStr := os.Getenv("MAX_DB_CONNECTION_RETRIES")
+	dbConnectionRetryDelayStr := os.Getenv("DB_CONNECTION_RETRY_DELAY_S")
+
+	// Will not
+	maxDbConnectionRetries, err := strconv.Atoi(maxDbConnectionRetriesStr)
+	if err != nil {
+		log.Fatalf("Could not parse the MAX_DB_CONNECTION_RETRIES environment variable: %v", err)
+	}
+	dbConnectionRetryDelayS, err := strconv.Atoi(dbConnectionRetryDelayStr)
+	if err != nil {
+		log.Fatalf("Could not parse the DB_CONNECTION_RETRY_DELAY_S environment variable: %v", err)
+	}
 
 	fetchDelaySeconds, err := strconv.Atoi(fetchDelayStr)
 	if err != nil {
@@ -77,9 +89,19 @@ func main() {
 	}
 
 	// Connect to the database
-	if err := models.ConnectDB(dsn); err != nil {
-		log.Fatalf("Failed to connect to DB: %v", err)
+	var dbConnectionError error
+	for i := 0; i < maxDbConnectionRetries; i++ {
+		if dbConnectionError = models.ConnectDB(dsn); dbConnectionError == nil {
+			break
+		}
+		log.Printf("Failed to connect to DB (attempt %d): %v", i+1, dbConnectionError)
+		time.Sleep(time.Duration(dbConnectionRetryDelayS) * time.Second)
 	}
+
+	if dbConnectionError != nil {
+		log.Fatalf("Failed to connect to DB after %d attempts: %v", maxDbConnectionRetries, dbConnectionError)
+	}
+
 	defer func() {
 		if err := models.CloseDB(); err != nil {
 			log.Printf("Error closing DB: %v", err)
