@@ -9,7 +9,7 @@
       <tr>
         <th class="p-2 border-b border-gray-300 text-left">Ticker</th>
         <th class="p-2 border-b border-gray-300 text-left">Company Name</th>
-        <th class="p-2 border-b border-gray-300 text-right">Current Price</th>
+        <th class="p-2 border-b border-gray-300 text-right" >Current Price</th>
         <th class="p-2 border-b border-gray-300">Recommendation</th>
       </tr>
       </thead>

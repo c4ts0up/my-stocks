@@ -27,4 +27,21 @@ describe("Main page", () => {
             expect(actualHeaders).to.deep.equal(expectedHeaders);
         });
     })
+
+    // 001-003
+    it("all rows have non-empty cells", () => {
+        cy.get("table tbody tr").each(($row) => {
+            cy.wrap($row)
+                .find('[data-testid="ticker-cell"]')
+                .should('not.be.empty');
+
+            cy.wrap($row)
+                .find('[data-testid="companyName-cell"]')
+                .should('not.be.empty');
+
+            cy.wrap($row)
+                .find('[data-testid="currentPrice-cell"]')
+                .should('not.be.empty');
+        });
+    })
 });
