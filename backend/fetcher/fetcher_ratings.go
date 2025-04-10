@@ -17,16 +17,16 @@ type BasicStockRatingsFetcher struct {
 }
 
 // FetchStockRatings pulls stock ratings from the given API and converts them to StockRating models
-func (s *BasicStockRatingsFetcher) FetchStockRatings(url string) ([]models.StockRating, string, error) {
+func (s *BasicStockRatingsFetcher) FetchStockRatings(url string) ([]models.StockRating, string, map[string]string, error) {
 	log.Printf("Fetching stock data from %s\n", url)
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to create request: %w", err)
+		return nil, "", nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	if s.BearerToken == "" {
-		return nil, "", fmt.Errorf("no bearer token provided")
+		return nil, "", nil, fmt.Errorf("no bearer token provided")
 	}
 
 	// Set headers
@@ -37,25 +37,25 @@ func (s *BasicStockRatingsFetcher) FetchStockRatings(url string) ([]models.Stock
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to fetch data from %v: %w", url, err)
+		return nil, "", nil, fmt.Errorf("failed to fetch data from %v: %w", url, err)
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("received invalid response from API: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+		return nil, "", nil, fmt.Errorf("received invalid response from API: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, "", errors.New("failed to read response body")
+		return nil, "", nil, errors.New("failed to read response body")
 	}
 
 	// obtains the stock query response
 	var apiResponses models.StockQueryResponse
 	if err := json.Unmarshal(body, &apiResponses); err != nil {
-		return nil, "", errors.New("failed to parse JSON response")
+		return nil, "", nil, errors.New("failed to parse JSON response")
 	}
 
 	// iterates through the stocks
@@ -63,17 +63,23 @@ func (s *BasicStockRatingsFetcher) FetchStockRatings(url string) ([]models.Stock
 	for _, rawStock := range apiResponses.Stocks {
 		stock, err := convertStockRatingsApiResponse(rawStock)
 		if err != nil {
-			return nil, "", fmt.Errorf("failed to parse stock data, got %v", err)
+			return nil, "", nil, fmt.Errorf("failed to parse stock data, got %v", err)
 		}
 		stockRatings = append(stockRatings, stock)
 	}
 
 	err = resp.Body.Close()
 	if err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
 
-	return stockRatings, apiResponses.NextPage, nil
+	// Extract all the names
+	companyNames := map[string]string{}
+	for _, stock := range apiResponses.Stocks {
+		companyNames[stock.Ticker] = stock.Company
+	}
+
+	return stockRatings, apiResponses.NextPage, companyNames, nil
 }
 
 // SaveStockRatings saves StockRating models to the database (stub implementation). Supposes there are no conflicts in the API and Stocks are already created
@@ -91,6 +97,30 @@ func (s *BasicStockRatingsFetcher) SaveStockRatings(stockList []models.StockRati
 		}
 	}
 
+	return nil
+}
+
+// UpdateCompanyNames updates the company name in the database if a non-empty name if found in the API response
+func (s *BasicStockRatingsFetcher) UpdateCompanyNames(companyNames map[string]string) error {
+	for ticker, name := range companyNames {
+		if name != "" {
+			result := s.DB.Model(&models.Stock{}).
+				Where("ticker = ?", ticker).
+				Updates(models.Stock{Company: name})
+
+			if result.Error != nil {
+				return result.Error
+			}
+
+			// No rows updated. Must create ticker
+			if result.RowsAffected == 0 {
+				stock := models.Stock{Ticker: ticker, Company: name}
+				if err := s.DB.Create(&stock).Error; err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -114,17 +144,23 @@ func (s *BasicStockRatingsFetcher) FetchAllRatings(url string) ([]string, error)
 	for {
 
 		// pulls
-		stockRatings, newSuffix, err := s.FetchStockRatings(url + "?next_page=" + nextPage)
+		stockRatings, newSuffix, companyNames, err := s.FetchStockRatings(url + "?next_page=" + nextPage)
 		if err != nil {
-			log.Printf("Entered an error %e", err)
+			log.Printf("Error during stock ratings fetch:  %e", err)
 			return []string{}, err
 		}
 
 		// saves
 		err = s.SaveStockRatings(stockRatings)
 		if err != nil {
-			log.Printf("Entered an error %e", err)
+			log.Printf("Error during stock ratings update in the database: %e", err)
 			return []string{}, err
+		}
+
+		// updates names in the database
+		err = s.UpdateCompanyNames(companyNames)
+		if err != nil {
+			log.Printf("Error during company names update: %e", err)
 		}
 
 		// adds tickers to return

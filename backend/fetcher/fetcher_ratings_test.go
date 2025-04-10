@@ -16,7 +16,7 @@ const mockTocken = "mock-token-123"
 func TestFetchStockData_InvalidURL(t *testing.T) {
 	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	_, _, err := fetcher.FetchStockRatings(":://bad-url")
+	_, _, _, err := fetcher.FetchStockRatings(":://bad-url")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create request")
 }
@@ -30,7 +30,7 @@ func TestFetchStockData_WrongResponse(t *testing.T) {
 	defer server.Close()
 
 	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
-	_, _, err := fetcher.FetchStockRatings(server.URL)
+	_, _, _, err := fetcher.FetchStockRatings(server.URL)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "received invalid response from API")
@@ -48,7 +48,7 @@ func TestFetchStockData_ReadBodyError(t *testing.T) {
 
 	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	_, _, err := fetcher.FetchStockRatings(server.URL)
+	_, _, _, err := fetcher.FetchStockRatings(server.URL)
 	if err == nil || err.Error() != "failed to read response body" {
 		t.Fatalf("expected 'failed to read response body', got %v", err)
 	}
@@ -65,7 +65,7 @@ func TestFetchStockData_ParseJsonError(t *testing.T) {
 
 	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	_, _, err := fetcher.FetchStockRatings(server.URL)
+	_, _, _, err := fetcher.FetchStockRatings(server.URL)
 	if err == nil || err.Error() != "failed to parse JSON response" {
 		t.Fatalf("expected 'failed to parse JSON response', got %v", err)
 	}
@@ -98,7 +98,7 @@ func TestFetchStockData_OK(t *testing.T) {
 
 	fetcher := BasicStockRatingsFetcher{BearerToken: mockTocken}
 
-	stocks, nextPage, err := fetcher.FetchStockRatings(server.URL)
+	stocks, nextPage, companyNames, err := fetcher.FetchStockRatings(server.URL)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -114,10 +114,15 @@ func TestFetchStockData_OK(t *testing.T) {
 	if nextPage != "AZEK" {
 		t.Errorf("expected next_page AZEK, got %s", nextPage)
 	}
+
+	name, exists := companyNames["BSBR"]
+	if exists && name != "Banco Santander (Brasil)" {
+		t.Errorf("expected name %s, got %s", "Banco Santander (Brasil)", name)
+	}
 }
 
 // --- TEST CASE 6: SaveStockRatings works ---
-func TestSaveStockData(t *testing.T) {
+func TestSaveStockData_Ok(t *testing.T) {
 	// Use an in-memory SQLite database for testing
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -153,7 +158,7 @@ func TestFetchStockData_MissingBearerToken(t *testing.T) {
 	defer server.Close()
 
 	fetcher := BasicStockRatingsFetcher{}
-	_, _, err := fetcher.FetchStockRatings(server.URL)
+	_, _, _, err := fetcher.FetchStockRatings(server.URL)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no bearer token provided")
@@ -235,4 +240,46 @@ func TestFetchAll_FailsOnBadPage(t *testing.T) {
 	_, err = fetcher.FetchAllRatings(server.URL)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "received invalid response from API")
+}
+
+// --- TEST CASE 10: UpdateCompanyNames updates company names
+func TestUpdateCompanyNames_Ok(t *testing.T) {
+	// Use an in-memory SQLite database for testing
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect to database: %v", err)
+	}
+	_ = db.AutoMigrate(&models.Stock{})
+
+	fetcher := BasicStockRatingsFetcher{DB: db, BearerToken: mockTocken}
+
+	companyNames := map[string]string{
+		"BSBR": "Banco Santander (Brasil)",
+		"VYGR": "",
+		"AAPL": "Apple Inc.",
+	}
+
+	// This value should not be updated
+	db.Where("ticker = VYGR").Create(models.Stock{
+		Ticker:  "VYGR",
+		Company: "Voyager Therapeutics",
+	})
+
+	err = fetcher.UpdateCompanyNames(companyNames)
+	assert.NoError(t, err)
+
+	// BSBR is updated with its proper name
+	var bsbrStock models.Stock
+	db.Where("ticker = ?", "BSBR").First(&bsbrStock)
+	assert.Equal(t, companyNames["BSBR"], bsbrStock.Company)
+
+	// AAPL is created and updated
+	var aaplStock models.Stock
+	db.Where("ticker = ?", "AAPL").First(&aaplStock)
+	assert.Equal(t, "Apple Inc.", aaplStock.Company)
+
+	// VYGR is not updated
+	var vygrStock models.Stock
+	db.Where("ticker = ?", "VYGR").First(&vygrStock)
+	assert.Equal(t, "Voyager Therapeutics", vygrStock.Company)
 }

@@ -67,10 +67,20 @@ func (b *BasicStockInfoFetcher) FetchStockInfo(ticker string, baseUrl string) (m
 
 // SaveStockInfo saves a Stock model to the database
 func (b *BasicStockInfoFetcher) SaveStockInfo(stock models.Stock) error {
-	result := b.DB.Model(&models.Stock{}).Where("ticker = ?", stock.Ticker).Updates(models.Stock{
-		LastPrice: stock.LastPrice,
-		Company:   stock.Company,
-	})
+
+	companyName := stock.Company
+	var result *gorm.DB
+
+	if companyName == "" {
+		result = b.DB.Model(&models.Stock{}).Where("ticker = ?", stock.Ticker).Updates(models.Stock{
+			LastPrice: stock.LastPrice,
+		})
+	} else {
+		result = b.DB.Model(&models.Stock{}).Where("ticker = ?", stock.Ticker).Updates(models.Stock{
+			LastPrice: stock.LastPrice,
+			Company:   stock.Company,
+		})
+	}
 
 	// If no rows were affected, it's a new stock, so we insert it
 	if result.RowsAffected == 0 {

@@ -1,14 +1,14 @@
 // StockRow.vue
 <template>
   <tr class="cursor-pointer hover:bg-gray-100" @click="$emit('select', stock.ticker)">
-    <td class="p-2 border-b border-gray-300 text-left">{{ stock.ticker }}</td>
-    <td class="p-2 border-b border-gray-300 text-left">{{ stock.company_name }}</td>
+    <td class="p-2 border-b border-gray-300 text-left" data-testid="ticker-cell">{{ stock.ticker }}</td>
+    <td class="p-2 border-b border-gray-300 text-left" data-testid="companyName-cell">{{ stock.company_name }}</td>
     <td class="p-2 border-b border-gray-300 text-right">
       <span class="float-left">USD</span>
-      <span class="float-right">{{ stock.last_price.toFixed(2) }}</span>
+      <span class="float-right" data-testid="currentPrice-cell">{{ stock.last_price.toFixed(2) }}</span>
     </td>
     <td class="p-2 border-b border-gray-300 text-center">
-      <span :class="getRecommendationClass(stock.recommendation, SIZE.md)">
+      <span :class="getRecommendationClass(stock.recommendation, SIZE.md)" data-testid="recommendation-cell">
         {{ stock.recommendation === "N/A" ? "" : stock.recommendation }}
       </span>
     </td>
